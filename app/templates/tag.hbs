@@ -28,9 +28,9 @@
 {{#if showFinishDialog}}
   {{#md-dialog
     label="Finished"
-    confirmationLabel="close"
-    onClose=(action "closeFinishDialog")
-    onConfirm=(action "closeFinishDialog")}}
-    <p>Files tagged: <b>{{filesTagged}}</b></p>
+    cancelLabel="close"
+    hideConfirmButton=true
+    onClose=(action "closeFinishDialog")}}
+    <p>Files tagged: <b>{{filesTaggedAndMoved}}</b></p>
   {{/md-dialog}}
 {{/if}}

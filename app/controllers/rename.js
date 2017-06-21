@@ -35,6 +35,7 @@ export default Ember.Controller.extend({
             .on('readable', function () {
               let item
               while ((item = this.read())) {
+                // TODO: check if file alredy exists
                 _this.rename(item).then(function () {
                   console.log(_this.get('filesRenamed'))
                   resolve()

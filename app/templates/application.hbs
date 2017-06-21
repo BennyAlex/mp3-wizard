@@ -40,3 +40,14 @@
     {{/paper-content}}
   </div>
 {{/paper-sidenav-container}}
+
+
+{{#if loading.isLoading}}
+  {{#md-dialog
+    clickOutsideToClose=false
+    hideDialogActions=true
+    label="Loading"}}
+    <h2>Loading, please wait...</h2>
+    Processed files: <b>{{loading.processedFiles}}</b>
+  {{/md-dialog}}
+{{/if}}

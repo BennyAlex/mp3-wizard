@@ -1,18 +1,62 @@
 import Ember from "ember";
+const {Controller, inject} = Ember;
 const fs = requireNode('fs-extra')
 const klaw = requireNode('klaw')
 const jsmediatags = requireNode("jsmediatags")
 const nodePath = requireNode('path')
 const through2 = requireNode('through2')
 const nodeID3 = requireNode('node-id3')
+const storage = requireNode('electron-json-storage');
+const guessMetadata = requireNode('guess-metadata');
+const {dialog} = requireNode('electron').remote
 
-export default Ember.Controller.extend({
-  delimiter: '-',
-  filesTagged: 0,
+export default Controller.extend({
+  filesTaggedAndMoved: 0,
+  wordsToRemove: [],
+  loading: inject.service(),
+
+  init() {
+    const _this = this
+
+    storage.has('wordsToRemove', function (error, hasKey) {
+      if (error) throw error;
+
+      if (hasKey) {
+        storage.get('wordsToRemove', function (error, data) {
+          if (error) throw error;
+          _this.set('wordsToRemove', data)
+        });
+      }
+      else {
+        const defaultWordsToRemove = [
+          'free_mp3_download',
+          'free_download',
+          'out_now',
+          'free mp3 download',
+          'free download',
+          'premiere',
+          'out now',
+          'outnow',
+          'free_dl',
+          'free dl',
+          'preview',
+          'download',
+          'mp4',
+          'music_video',
+          'official_video',
+          'music video',
+          'offical video',
+          'video'
+        ]
+        storage.set('wordsToRemove', defaultWordsToRemove, function (error) {
+          if (error) throw error;
+          _this.set('wordsToRemove', defaultWordsToRemove)
+        });
+      }
+    });
+  },
 
   loadFilesFromFolder(folderPath) {
-    //TODO: multiple paths
-
     function ignoreTaggedFolder(item) {
       return nodePath.basename(item) !== 'tagged'
     }
@@ -42,56 +86,55 @@ export default Ember.Controller.extend({
     })
   },
 
-  formatString(str, removeTracknumber) {
-    str = str.replace(/_+/igm, ' ')
-    str = str.trim()
-    const badChars = ['free mp3 download', 'free download', 'premiere', 'out now', 'outnow', 'free dl', '%', '§', 'preview', 'download']
-    badChars.forEach(function (item) {
-      str = str.replace(new RegExp(item, 'gi'), '')
+  removeUnwantedWords(fileName) {
+    //todo: remove tracknumbers at filebegin
+    this.get('wordsToRemove').forEach(function (item) {
+      fileName = fileName.replace(new RegExp(item, 'gi'), '')
     })
-    str = str.replace(/[[({][\s\d!?]*[\])}]/igm, '') // remove empty [],{},() or containing only digits
-    str = str.replace(/\s\s+/g, ' ') //remove multiple whitespaces
-    if (removeTracknumber) str = str.replace(/\d+\s+/i, '')
-    return str
+    return fileName
   },
 
-  getTags(path){
-    let fileNameWithExt = nodePath.basename(path)
-    let fileNameWithoutExt = fileNameWithExt.split('.mp3')
-    let fileName = fileNameWithoutExt[0]
-    if (fileName) {
-      let delimiter = this.get('delimiter')
-      let infos = fileName.split(delimiter)
-      if (infos.length === 2) {
-        let artist = this.formatString(infos[0], true)
-        let title = this.formatString(infos[1])
-        if (title.toLocaleLowerCase().search('feat') < 0 && title.toLocaleLowerCase().search('ft.') < 0 && isNaN(artist)) {
-          if (artist && title) {
-            return {path: path, tags: {title: title, artist: artist}}
-          }
-        }
+  getTags(path) {
+    let fileNameWithoutExt = nodePath.basename(path).split('.mp3')[0]
+    let filename = this.removeUnwantedWords(fileNameWithoutExt)
+
+    if (filename) {
+      const tags = guessMetadata(filename)
+      if (tags.artist && tags.title) {
+        return {path: path, tags: {title: tags.title, artist: tags.artist}}
+      }
+      else {
+        return "no tags found"
       }
     }
-  },
-
-  writeTags(tags, file) {
-    return nodeID3.write(tags, file)
   },
 
   loadTags(file) {
     const _this = this
     return new Promise((resolve) => {
       new jsmediatags.Reader(file)
-        .setTagsToRead(["title", "artist"])
+        .setTagsToRead(["title", "artist", "album", "year", "genre", "picture", "lyrics"])
         .read({
           onSuccess: function (tag) {
-            if (!(tag.tags.title && tag.tags.artist)) {
+            // remove ID3 Tags != 2.3.0
+            let version = parseInt(tag.version.replace('.', ''))
+            let majaor = tag.major
+
+            if (version !== 23 || majaor !== 3) {
+              nodeID3.removeTags(file)
+              resolve({path: file, tags: tag.tags})
+            }
+            else if (!(tag.tags.title && tag.tags.artist)) {
+              // file doesnt have an artist or a title -> lets tag it
               resolve(_this.getTags(file))
             }
-            resolve()
+            else {
+              console.log('file already tagged: ', file)
+              resolve('file already tagged')
+            }
           },
-          onError: function (error) {
-            console.log('error while reading tags in: ' + error)
+          onError: function () {
+            // for the file exists no suitable tag reader, so the file dosnt have tags -> lets tag it
             resolve(_this.getTags(file))
           }
         })
@@ -113,78 +156,58 @@ export default Ember.Controller.extend({
   },
 
   actions: {
+    closeFinishDialog() {
+      this.set('showFinishDialog', false)
+      this.set('filesTaggedAndMoved', 0)
+      this.set('loading.processedFiles', 0)
+      this.set('paths', [])
+    },
+
     onChooseFolderButtonClick() {
-      const {dialog} = requireNode('electron').remote
-      let paths = dialog.showOpenDialog({properties: ['openDirectory', 'multiSelections']})
-      this.set('paths', paths) // TODO: multiple paths
+      this.set('paths', dialog.showOpenDialog({properties: ['openDirectory', 'multiSelections']}))
     },
 
     onTagButtonClick() {
+      this.set('loading.isLoading', true)
       const _this = this;
-      return Promise.all(_this.get('paths').map(path => {
-          return new Promise(resolve1 => {
-            _this.loadFilesFromFolder(path).then(files => {
-              return Promise.all(files.map(file => {
-                return new Promise(resolve2 => {
-                  return _this.loadTags(file).then(fileAndTags => {
-                    if (fileAndTags) {
-                      let res = _this.writeTags(fileAndTags.tags, fileAndTags.path)
-                      if (res) {
-                        _this.moveFile(fileAndTags.path).then(file => {
-                          resolve2(file)
-                        })
-                      } else {
-                        resolve2()
-                      }
+      const paths = _this.get('paths')
+
+      return Promise.all(paths.map(path => {
+        return new Promise(resolve1 => {
+          return _this.loadFilesFromFolder(path).then(files => {
+            return Promise.all(files.map(file => {
+              return new Promise((resolve2, reject2) => {
+                _this.loadTags(file).then(fileAndTags => {
+                  if (fileAndTags.tags.title && fileAndTags.tags.artist) {
+                    let res = nodeID3.write(fileAndTags.tags, fileAndTags.path)
+                    if (res) {
+                      _this.moveFile(fileAndTags.path).then(file => {
+                        _this.incrementProperty('filesTaggedAndMoved')
+                        _this.incrementProperty('loading.processedFiles')
+                        resolve2(file)
+                      })
                     }
-                  })
+                    else {
+                      reject2()
+                    }
+                  }
+                  else {
+                    resolve2()
+                  }
                 })
-              })).then(results => {
-                resolve1(results)
               })
+            })).then(result => {
+              resolve1(result)
             })
           })
         })
-      ).then(result => console.log('finish', result))
+      }))
+        .then(result => {
+          console.log('finish', result)
+          _this.set('loading.isLoading', false)
+          _this.set('showFinishDialog', true)
+        })
+        .catch(error => console.log(error))
     }
   }
 })
-
-
-/*  --------------------
-
- return Promise.all(_this.get('paths').map(path => {
- return _this.loadFilesFromFolder(path)
- }))
- .then(foldersAndFiles => {
- return Promise.all(foldersAndFiles.map(files => {
- return Promise.all(files.map(file => {
- return _this.loadTags(file)
- }))
- }))
- })
- .then(itemsAndTags => itemsAndTags.filter(item => item !== undefined))
- .then(itemsAndTags => {
- const itemsForMove = []
- itemsAndTags.forEach(item => {
- let res = _this.writeTags(item.tags, item.file)
- if (res) itemsForMove.push(item.file)
- })
- return itemsForMove
- })
- .then(items => {
- return Promise.all(items.map(item => _this.moveFile(item)))
- })
- .then(items => {
- const finishedItems = items.filter(item => item !== undefined)
- console.log('finish', items, finishedItems.length)
- _this.set('filesTagged', finishedItems.length)
- _this.set('showFinishDialog', true)
- })
- .catch((error) => {
- console.log(error)
- })
- }
- }
- */
-

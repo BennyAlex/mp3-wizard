@@ -1,1 +1,53 @@
-{{yield}}
+{{#paper-dialog fullscreen=true onClose=onClose clickOutsideToClose=clickOutsideToClose}}
+  {{#paper-toolbar}}
+    <div class="md-toolbar-tools">
+      <h2>{{label}}</h2>
+      {{#if onClose}}
+        <span class="flex"></span>
+        {{#paper-button iconButton=true onClick=onClose}}
+          {{paper-icon icon="close"}}
+        {{/paper-button}}
+      {{/if}}
+    </div>
+  {{/paper-toolbar}}
+
+  {{#paper-dialog-content}}
+    {{yield}}
+  {{/paper-dialog-content}}
+
+  {{#if (not hideDialogActions)}}
+    {{#paper-dialog-actions class="layout-row layout-align-end-center"}}
+      {{#if onDelete}}
+        {{#paper-button
+          primary=true
+          warn=true
+          onClick=onDelete}}
+          {{deleteLabel}}
+        {{/paper-button}}
+        <span style="padding-right: 0.9em"></span>
+      {{else}}
+        <span class="flex"></span>
+      {{/if}}
+
+      {{#if (not hideCancelButton)}}
+        {{#paper-button
+          primary=false
+          onClick=onClose}}
+          {{cancelLabel}}
+        {{/paper-button}}
+        <span style="padding-right: 0.9em"></span>
+      {{/if}}
+
+      {{#if useExcelExport}}
+        {{excel-exporter label="Download" url=excelUrl disabled=excelDisabled primary=true raised=false}}
+      {{else if (not hideConfirmButton)}}
+        {{#paper-button
+          primary=true
+          warn=confirmationAsWarning
+          onClick=onConfirm}}
+          {{confirmationLabel}}
+        {{/paper-button}}
+      {{/if}}
+    {{/paper-dialog-actions}}
+  {{/if}}
+{{/paper-dialog}}
