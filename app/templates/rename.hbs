@@ -1,0 +1,36 @@
+<div class="layout-column layout-align-space-around-start layout-wrap">
+  <h1>renamer</h1>
+  <h2>Tags -> Filename</h2>
+  <div>
+    {{#paper-button onClick=(action "onChooseFolderButtonClick") primary=true raised=true}}
+      choose folder
+    {{/paper-button}}
+  </div>
+
+  <div>
+    {{#if paths}}
+      <h3>paths: </h3>
+      <ul>
+        {{#each paths as |path|}}
+          <li>{{path}}</li>
+        {{/each}}
+      </ul>
+    {{/if}}
+  </div>
+
+  <div>
+    {{#paper-button onClick=(action "onRenameButtonClick") primary=true raised=true disabled=(not paths)}}
+      rename files
+    {{/paper-button}}
+  </div>
+</div>
+
+{{#if showFinishDialog}}
+  {{#md-dialog
+    label="Finished"
+    confirmationLabel="close"
+    onClose=(action "closeFinishDialog")
+    onConfirm=(action "closeFinishDialog")}}
+    <p>Files renamed: <b>{{filesRenamed}}</b></p>
+  {{/md-dialog}}
+{{/if}}

@@ -1,0 +1,38 @@
+<div class="no-text-highlight {{if disabled 'disabled' 'cursor-pointer'}}"
+     onclick={{if disabled (action "showWarning") (if onClick (action "_onClick") (transition-to route))}}>
+  {{#paper-item noink=(if disabled true)
+                class=(if _active (if disabled 'active disabled' 'active') (if disabled 'disabled'))}}
+    {{_label}}
+  {{/paper-item}}
+</div>
+
+{{#if showWarning}}
+  {{#paper-dialog fullscreen=true onClose=(action "closeWarning") clickOutsideToClose=true}}
+    {{#paper-form as |form|}}
+      {{#paper-toolbar}}
+        <div class="md-toolbar-tools">
+          <h2>Hinweis</h2>
+          <span class="flex"></span>
+          {{#paper-button iconButton=true onClick=(action "closeWarning")}}
+            {{paper-icon icon="close"}}
+          {{/paper-button}}
+        </div>
+      {{/paper-toolbar}}
+      {{#paper-dialog-content}}
+        <div class="layout-row layout-wrap layout-align-space-around">
+          <h3>
+            Sie befinden sich im Bearbeitungsmodus. <br>
+            Bitte speichern oder abbrechen.
+          </h3>
+        </div>
+      {{/paper-dialog-content}}
+      {{#paper-dialog-actions class="layout-row layout-align-end-center"}}
+        {{#paper-button
+          primary=true
+          onClick=(action "closeWarning" form)}}
+          Schließen
+        {{/paper-button}}
+      {{/paper-dialog-actions}}
+    {{/paper-form}}
+  {{/paper-dialog}}
+{{/if}}

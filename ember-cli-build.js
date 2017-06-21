@@ -1,10 +1,29 @@
 /* eslint-env node */
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 
-module.exports = function(defaults) {
-  var app = new EmberApp(defaults, {
-    // Add options here
-  });
+module.exports = function (defaults) {
+  var config = {
+    "ember-cli-qunit": {
+      useLintTree: true
+    },
+    /* etc */
+    babel: {
+      includePolyfill: true,
+      blacklist: [
+        'es6.forOf',
+        'regenerator',
+        'es6.arrowFunctions',
+        'es6.constants',
+        'es6.blockScoping',
+        'es6.templateLiterals']
+    },
+    sourcemaps: {
+      enabled: true,
+      extensions: ['js']
+    }
+  };
+
+  var app = new EmberApp(defaults, config);
 
   // Use `app.import` to add additional libraries to the generated
   // output files.

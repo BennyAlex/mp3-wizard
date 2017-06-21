@@ -1,0 +1,36 @@
+<div class="layout-column layout-align-space-around-start layout-wrap">
+  <h1>tagger</h1>
+  <h2>Filename -> Tags</h2>
+  <div>
+    {{#paper-button onClick=(action "onChooseFolderButtonClick") primary=true raised=true}}
+      choose folder
+    {{/paper-button}}
+  </div>
+
+  <div>
+    {{#if paths}}
+      <h3>paths: </h3>
+      <ul>
+        {{#each paths as |path|}}
+          <li>{{path}}</li>
+        {{/each}}
+      </ul>
+    {{/if}}
+  </div>
+
+  <div>
+    {{#paper-button onClick=(action "onTagButtonClick") primary=true raised=true disabled=(not paths)}}
+      tag files
+    {{/paper-button}}
+  </div>
+</div>
+
+{{#if showFinishDialog}}
+  {{#md-dialog
+    label="Finished"
+    confirmationLabel="close"
+    onClose=(action "closeFinishDialog")
+    onConfirm=(action "closeFinishDialog")}}
+    <p>Files tagged: <b>{{filesTagged}}</b></p>
+  {{/md-dialog}}
+{{/if}}

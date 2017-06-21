@@ -1,5 +1,42 @@
-{{!-- The following component displays Ember's default welcome message. --}}
-{{welcome-page}}
-{{!-- Feel free to remove this! --}}
-
-{{outlet}}
+{{#paper-sidenav-container class="site-nav-container"}}
+  {{#paper-sidenav class="md-whiteframe-z2 site-sidenav" lockedOpen="gt-sm"
+                   open=isSidenavOpen onToggle=(action (mut isSidenavOpen))}}
+  {{!--     toolbar on big screens      --}}
+    {{#paper-toolbar class="site-content-toolbar hide show-gt-sm" tall=false}}
+      {{#paper-toolbar-tools}}
+        <div class="no-text-highlight">mp3-wizard</div>
+      {{/paper-toolbar-tools}}
+    {{/paper-toolbar}}
+    {{!--     toolbar on small screens      --}}
+    {{#paper-toolbar class="site-content-toolbar hide-gt-sm" tall=true}}
+      {{#paper-toolbar-tools}}
+        <div class="layout-row layout-align-center-center">
+          <div class="no-text-highlight">mp3-wizard</div>
+        </div>
+      {{/paper-toolbar-tools}}
+    {{/paper-toolbar}}
+    {{#paper-content}}
+      {{#paper-list}}
+        {{md-menu-item route="rename"}}
+        {{md-menu-item route="tag"}}
+      {{/paper-list}}
+    {{/paper-content}}
+  {{/paper-sidenav}}
+  <div class="layout-column flex">
+    {{#paper-toolbar class="md-whiteframe-1dp" id="md-page-toolbar" as |toolbar|}}
+      {{#toolbar.tools}}
+        {{#paper-button class="hide-gt-sm" onClick=(action (mut isSidenavOpen)) iconButton=true}}
+          {{paper-icon "menu"}}
+        {{/paper-button}}
+        <h2 class="no-text-highlight">{{title.currentRouteName}}</h2>
+      {{/toolbar.tools}}
+    {{/paper-toolbar}}
+    {{#paper-content flex=true scroll-y=true class="layout-padding" id="md-page-content"}}
+      <div class="layout-row layout-wrap" tabindex="-1" role="main">
+        <div class="flex-100">
+          {{outlet}}
+        </div>
+      </div>
+    {{/paper-content}}
+  </div>
+{{/paper-sidenav-container}}
