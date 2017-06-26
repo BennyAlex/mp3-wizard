@@ -1,4 +1,5 @@
 import Ember from "ember";
+import {initTagger, tagger} from "../libs/tagger";
 const {Controller, inject} = Ember;
 const fs = requireNode('fs-extra')
 const klaw = requireNode('klaw')
@@ -6,54 +7,16 @@ const jsmediatags = requireNode("jsmediatags")
 const nodePath = requireNode('path')
 const through2 = requireNode('through2')
 const nodeID3 = requireNode('node-id3')
-const storage = requireNode('electron-json-storage');
-const guessMetadata = requireNode('guess-metadata');
+const storage = requireNode('electron-json-storage')
 const {dialog} = requireNode('electron').remote
+
 
 export default Controller.extend({
   filesTaggedAndMoved: 0,
-  wordsToRemove: [],
   loading: inject.service(),
 
   init() {
-    const _this = this
-
-    storage.has('wordsToRemove', function (error, hasKey) {
-      if (error) throw error;
-
-      if (hasKey) {
-        storage.get('wordsToRemove', function (error, data) {
-          if (error) throw error;
-          _this.set('wordsToRemove', data)
-        });
-      }
-      else {
-        const defaultWordsToRemove = [
-          'free_mp3_download',
-          'free_download',
-          'out_now',
-          'free mp3 download',
-          'free download',
-          'premiere',
-          'out now',
-          'outnow',
-          'free_dl',
-          'free dl',
-          'preview',
-          'download',
-          'mp4',
-          'music_video',
-          'official_video',
-          'music video',
-          'offical video',
-          'video'
-        ]
-        storage.set('wordsToRemove', defaultWordsToRemove, function (error) {
-          if (error) throw error;
-          _this.set('wordsToRemove', defaultWordsToRemove)
-        });
-      }
-    });
+    initTagger()
   },
 
   loadFilesFromFolder(folderPath) {
@@ -86,29 +49,6 @@ export default Controller.extend({
     })
   },
 
-  removeUnwantedWords(fileName) {
-    //todo: remove tracknumbers at filebegin
-    this.get('wordsToRemove').forEach(function (item) {
-      fileName = fileName.replace(new RegExp(item, 'gi'), '')
-    })
-    return fileName
-  },
-
-  getTags(path) {
-    let fileNameWithoutExt = nodePath.basename(path).split('.mp3')[0]
-    let filename = this.removeUnwantedWords(fileNameWithoutExt)
-
-    if (filename) {
-      const tags = guessMetadata(filename)
-      if (tags.artist && tags.title) {
-        return {path: path, tags: {title: tags.title, artist: tags.artist}}
-      }
-      else {
-        return "no tags found"
-      }
-    }
-  },
-
   loadTags(file) {
     const _this = this
     return new Promise((resolve) => {
@@ -122,20 +62,22 @@ export default Controller.extend({
 
             if (version !== 23 || majaor !== 3) {
               nodeID3.removeTags(file)
-              resolve({path: file, tags: tag.tags})
+              //check if old tags had title and artist
+              if (tag.tags.title && tag.tags.artist) resolve({path: file, tags: tag.tags})
+              else resolve(tagger(file))
             }
             else if (!(tag.tags.title && tag.tags.artist)) {
               // file doesnt have an artist or a title -> lets tag it
-              resolve(_this.getTags(file))
+              resolve(tagger(file))
             }
             else {
-              console.log('file already tagged: ', file)
-              resolve('file already tagged')
+              //file already tagged
+              resolve()
             }
           },
           onError: function () {
             // for the file exists no suitable tag reader, so the file dosnt have tags -> lets tag it
-            resolve(_this.getTags(file))
+            resolve(tagger(file))
           }
         })
     })
@@ -178,22 +120,22 @@ export default Controller.extend({
             return Promise.all(files.map(file => {
               return new Promise((resolve2, reject2) => {
                 _this.loadTags(file).then(fileAndTags => {
-                  if (fileAndTags.tags.title && fileAndTags.tags.artist) {
-                    let res = nodeID3.write(fileAndTags.tags, fileAndTags.path)
-                    if (res) {
-                      _this.moveFile(fileAndTags.path).then(file => {
-                        _this.incrementProperty('filesTaggedAndMoved')
-                        _this.incrementProperty('loading.processedFiles')
-                        resolve2(file)
-                      })
-                    }
-                    else {
-                      reject2()
+                  if(fileAndTags) {
+                    if (fileAndTags.tags.title && fileAndTags.tags.artist) {
+                      let res = nodeID3.write(fileAndTags.tags, fileAndTags.path)
+                      if (res) {
+                        _this.moveFile(fileAndTags.path).then(file => {
+                          _this.incrementProperty('filesTaggedAndMoved')
+                          _this.incrementProperty('loading.processedFiles')
+                          resolve2(file)
+                        })
+                      }
+                      else {
+                        reject2()
+                      }
                     }
                   }
-                  else {
-                    resolve2()
-                  }
+                  resolve2()
                 })
               })
             })).then(result => {

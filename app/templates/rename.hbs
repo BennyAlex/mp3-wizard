@@ -1,29 +1,33 @@
-<div class="layout-column layout-align-space-around-start layout-wrap">
-  <h1>renamer</h1>
-  <h2>Tags -> Filename</h2>
-  <div>
-    {{#paper-button onClick=(action "onChooseFolderButtonClick") primary=true raised=true}}
-      choose folder
-    {{/paper-button}}
-  </div>
-
-  <div>
+{{#paper-card as |card|}}
+  {{#card.title as |title|}}
+    {{#title.text as |text|}}
+      {{#text.headline}}<b>Renamer</b>{{/text.headline}}
+      {{#text.subhead}}<h2>Tags -> Filename</h2>{{/text.subhead}}
+    {{/title.text}}
+  {{/card.title}}
+  {{#card.content}}
     {{#if paths}}
-      <h3>paths: </h3>
+      <span style="font-size: 1.05rem">Selected paths:</span>
       <ul>
         {{#each paths as |path|}}
           <li>{{path}}</li>
         {{/each}}
       </ul>
     {{/if}}
-  </div>
+  {{/card.content}}
+  {{#card.actions class="layout-column layout-align-space-between"}}
+    <div style="padding-left: 1em">{{#paper-button onClick=(action "onChooseFolderButtonClick") primary=true
+                                                   raised=true}}
+      choose folder  {{paper-icon "folder-open"}}
+    {{/paper-button}}</div>
 
-  <div>
-    {{#paper-button onClick=(action "onRenameButtonClick") primary=true raised=true disabled=(not paths)}}
-      rename files
-    {{/paper-button}}
-  </div>
-</div>
+    <div style="margin-left: 1em; margin-top: 1.3em">{{#paper-button onClick=(action "onRenameButtonClick") primary=true
+                                                                     raised=true disabled=(not paths)}}
+      rename files  {{paper-icon "edit"}}
+    {{/paper-button}}</div>
+  {{/card.actions}}
+{{/paper-card}}
+
 
 {{#if showFinishDialog}}
   {{#md-dialog

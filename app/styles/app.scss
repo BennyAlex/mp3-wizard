@@ -1,7 +1,10 @@
 @import "color-palette";
 
+$light-grey-background-color: #d9d9d9;
+$dark-grey-background-color: #bebebe;
+
 $orange-contrast: rgba(255, 170, 82, 0.87) !default;
-$grey-background: map_merge($color-grey, ('A100': #ebebeb));
+$grey-background: map_merge($color-grey, ('A100': $light-grey-background-color));
 $color-black: map_merge($color-blue-grey, ('contrast': $orange-contrast, '500': color($color-blue-grey, '900')));
 
 $primary: $color-black;
@@ -14,8 +17,16 @@ $base-color: rgba(0, 0, 0, 0.87) !default;
 
 @import 'ember-paper';
 
-body {
-  background: #ebebeb;
+body, #md-page-content {
+  background: $dark-grey-background-color;
+}
+
+html {
+  font-size: 16px;
+}
+
+ul li {
+  font-size: 0.95rem;
 }
 
 a {
@@ -37,7 +48,7 @@ md-list-item {
     width: 100%;
   }
   &.active {
-    background-color: rgba(#000, .1);
+    background-color: $dark-grey-background-color;
   }
 }
 
@@ -134,18 +145,23 @@ md-step-body.md-padding {
   background: #ececec;
 }
 
-md-list-item.active {
-  background-color: rgba(0, 0, 0, 0.16);
-}
-
 .floating-btn {
   position: fixed;
   bottom: 32px;
   right: 38px;
 }
 
+md-card-content {
+  padding-top: 0.8em !important;
+}
+
+md-card-actions {
+  padding-bottom: 1em !important;
+}
+
 md-content#md-page-content {
-  padding-bottom: 73px;
+  margin-top: 1.5em;
+  padding: 0 0 73px 0 !important;
 }
 
 /*
@@ -156,12 +172,6 @@ md-sidenav {
   a {
     text-decoration: none;
   }
-}
-
-.custom-padding {
-  padding: 4px;
-  padding-top: 6px;
-  padding-left: 7px;
 }
 
 body {
