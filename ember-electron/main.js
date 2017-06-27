@@ -1,12 +1,13 @@
 /* eslint-env node */
-const { app, BrowserWindow, protocol } = require('electron');
-const { dirname, join, resolve } = require('path');
+const electron = require('electron')
+const {app, BrowserWindow, protocol, Menu, MenuItem} = electron;
+const {dirname, join, resolve} = require('path');
 const protocolServe = require('electron-protocol-serve');
 
 let mainWindow = null;
 
 // Registering a protocol & schema to serve our Ember application
-protocol.registerStandardSchemes(['serve'], { secure: true });
+protocol.registerStandardSchemes(['serve'], {secure: true});
 protocolServe({
   cwd: join(__dirname || resolve(dirname('')), '..', 'ember'),
   app,
@@ -29,8 +30,54 @@ app.on('window-all-closed', () => {
 });
 
 app.on('ready', () => {
-  mainWindow = new BrowserWindow();
-  mainWindow.maximize();
+  function isDev() {
+    return process.mainModule.filename.indexOf('app.asar') === -1;
+  }
+
+  const {width, height} = electron.screen.getPrimaryDisplay().workAreaSize
+  let wid = width * .7, hei = height * .7
+  if (wid < 700 || hei < 400) {
+    wid = width
+    hei = height
+  }
+
+  let options = {width: wid, height: hei, show: false, backgroundColor: '#666666'}
+
+  if (isDev()) {
+    options['frame'] = true
+    mainWindow = new BrowserWindow(options);
+    console.log('Running in Development');
+
+    const menu = new Menu();
+    menu.append(new MenuItem({
+      label: 'Reload',
+      role: 'forcereload',
+      accelerator: 'F5',
+    }));
+    menu.append(new MenuItem({
+      label: 'Toggle Developer Tools',
+      role: 'toggledevtools',
+      accelerator: 'F12',
+    }));
+    menu.append(new MenuItem({
+      label: 'Toggle Fullscreen',
+      role: 'togglefullscreen',
+      accelerator: 'F11',
+    }));
+
+    Menu.setApplicationMenu(menu)
+  }
+
+  else {
+    options['frame'] = false
+    mainWindow = new BrowserWindow(options);
+    mainWindow.setMenu(null);
+  }
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show()
+  })
+  //mainWindow.maximize();
 
   // If you want to open up dev tools programmatically, call
   // mainWindow.openDevTools();
