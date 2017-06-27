@@ -63,6 +63,7 @@ md-list-item {
   user-select: none;
   outline-style: none;
   -webkit-touch-callout: none;
+  cursor: default;
 }
 
 .green-check-icon {
@@ -209,4 +210,13 @@ md-toolbar.md-warn {
 
 .inner-sidenav {
   position: relative;
+}
+
+.app-draggable {
+  -webkit-app-region: drag;
+  cursor: default;
+}
+
+.app-dragginable {
+  -webkit-app-region: no-drag;
 }

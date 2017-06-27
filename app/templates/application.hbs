@@ -1,20 +1,23 @@
 {{#paper-sidenav-container class="site-nav-container"}}
   {{#paper-sidenav class="md-whiteframe-z2 site-sidenav" lockedOpen="gt-sm"
                    open=isSidenavOpen onToggle=(action (mut isSidenavOpen))}}
+
   {{!--     toolbar on big screens      --}}
-    {{#paper-toolbar class="site-content-toolbar hide show-gt-sm" tall=false}}
+    {{#paper-toolbar class="site-content-toolbar hide show-gt-sm app-draggable" tall=false}}
       {{#paper-toolbar-tools}}
         <div class="no-text-highlight">mp3-wizard</div>
       {{/paper-toolbar-tools}}
     {{/paper-toolbar}}
+
     {{!--     toolbar on small screens      --}}
-    {{#paper-toolbar class="site-content-toolbar hide-gt-sm" tall=true}}
+    {{#paper-toolbar class="site-content-toolbar hide-gt-sm app-draggable" tall=true}}
       {{#paper-toolbar-tools}}
         <div class="layout-row layout-align-center-center">
           <div class="no-text-highlight">mp3-wizard</div>
         </div>
       {{/paper-toolbar-tools}}
     {{/paper-toolbar}}
+
     {{#paper-content}}
       {{#paper-list}}
         {{md-menu-item route="rename"}}
@@ -22,15 +25,24 @@
       {{/paper-list}}
     {{/paper-content}}
   {{/paper-sidenav}}
+
   <div class="layout-column flex">
-    {{#paper-toolbar class="md-whiteframe-1dp" id="md-page-toolbar" as |toolbar|}}
+    {{#paper-toolbar class=(if isSidenavOpen "md-whiteframe-1dp app-dragginable" "md-whiteframe-1dp app-draggable")
+                     id="md-page-toolbar" as |toolbar|}}
+
       {{#toolbar.tools}}
-        {{#paper-button class="hide-gt-sm" onClick=(action (mut isSidenavOpen)) iconButton=true}}
+        {{#paper-button class="hide-gt-sm app-dragginable" onClick=(action (mut isSidenavOpen)) iconButton=true}}
           {{paper-icon "menu"}}
         {{/paper-button}}
         <h2 class="no-text-highlight">{{title.currentRouteName}}</h2>
+        <div class="flex"></div>
+        {{#paper-button class="app-dragginable" onClick=(action "closeApp") iconButton=true}}
+          {{paper-icon "close"}}
+        {{/paper-button}}
       {{/toolbar.tools}}
+
     {{/paper-toolbar}}
+
     {{#paper-content flex=true scroll-y=true class="layout-padding" id="md-page-content"}}
       <div class="layout-row layout-align-space-around-center layout-wrap" tabindex="-1" role="main" style="padding: 0">
         <div class="flex-95">
@@ -48,6 +60,6 @@
     hideDialogActions=true
     label="Loading"}}
     <h2>Loading, please wait...</h2>
-    Processed files: <b>{{loading.processedFiles}}</b>
+    {{#if loading.processedFiles}}Processed files: <b>{{loading.processedFiles}}</b>{{/if}}
   {{/md-dialog}}
 {{/if}}
