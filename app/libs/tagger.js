@@ -2,10 +2,35 @@ const path = requireNode('path')
 const storage = requireNode('electron-json-storage')
 const guessMetadata = requireNode('guess-metadata');
 
+const defaultWordsToRemove = [
+  'free_mp3_download',
+  'free_download',
+  'out_now',
+  'free mp3 download',
+  'free download',
+  'premiere',
+  'out now',
+  'outnow',
+  'free_dl',
+  'free dl',
+  'preview',
+  'download',
+  'mp4',
+  'music_video',
+  'official_video',
+  'music video',
+  'offical video',
+  'video'
+]
+
+
 const removeUnwantedWords = (fileName) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
       storage.get('wordsToRemove', function (error, data) {
-        if (error) reject(error)
+        if (error) {
+          console.log('storage has no wordsToRemove Key. Please run initTagger before using the tagger')
+          data = defaultWordsToRemove
+        }
         data.forEach(function (item) {
           fileName = fileName.replace(new RegExp(item, 'gim'), '')
         })
@@ -15,9 +40,9 @@ const removeUnwantedWords = (fileName) => {
   )
 }
 
-const tagger = (fielPath) => {
+const tagger = (filePath) => {
   return new Promise(resolve => {
-    let fileNameWithoutExt = path.basename(fielPath).split('.mp3')[0]
+    let fileNameWithoutExt = path.basename(filePath).split('.mp3')[0]
     removeUnwantedWords(fileNameWithoutExt).then(filename => {
       if (filename) {
         const tags = guessMetadata(filename)
@@ -27,7 +52,7 @@ const tagger = (fielPath) => {
           if (tracknumMatch[1]) {
             tags.artist = tracknumMatch[2];
           }
-          return resolve({path: fielPath, tags: tags})
+          return resolve({path: filePath, tags: tags})
         }
       }
       resolve()
@@ -39,26 +64,6 @@ const initTagger = () => {
   storage.has('wordsToRemove', (error, hasKey) => {
     if (error) throw error;
     else if (!hasKey) {
-      const defaultWordsToRemove = [
-        'free_mp3_download',
-        'free_download',
-        'out_now',
-        'free mp3 download',
-        'free download',
-        'premiere',
-        'out now',
-        'outnow',
-        'free_dl',
-        'free dl',
-        'preview',
-        'download',
-        'mp4',
-        'music_video',
-        'official_video',
-        'music video',
-        'offical video',
-        'video'
-      ]
       storage.set('wordsToRemove', defaultWordsToRemove, error => {
         if (error) throw error
       })

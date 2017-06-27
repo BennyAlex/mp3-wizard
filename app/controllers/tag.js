@@ -1,13 +1,10 @@
 import Ember from "ember";
 import {initTagger, tagger} from "../libs/tagger";
+import {loadFilesFromFolder, moveFile} from "../libs/file-utils";
 const {Controller, inject} = Ember;
-const fs = requireNode('fs-extra')
-const klaw = requireNode('klaw')
 const jsmediatags = requireNode("jsmediatags")
 const nodePath = requireNode('path')
-const through2 = requireNode('through2')
 const nodeID3 = requireNode('node-id3')
-const storage = requireNode('electron-json-storage')
 const {dialog} = requireNode('electron').remote
 
 
@@ -19,38 +16,37 @@ export default Controller.extend({
     initTagger()
   },
 
-  loadFilesFromFolder(folderPath) {
-    function ignoreTaggedFolder(item) {
-      return nodePath.basename(item) !== 'tagged'
-    }
-
-    const excludeDirAndOnlyMp3 = through2.obj(function (item, enc, next) {
-      if (!item.stats.isDirectory() && nodePath.extname(item.path) === '.mp3') this.push(item)
-      next()
-    })
-
-    const items = []
-    return new Promise((resolve, reject) => {
-      klaw(folderPath, {filter: ignoreTaggedFolder})
-        .pipe(excludeDirAndOnlyMp3)
-        .on('data', function (item) {
-          items.push(item.path)
-          // only items of none ignored folders will reach here
-        })
-        .on('error', function (err, item) {
-          console.log(err.message)
-          console.log(item.path) // the file the error occurred on
-          reject()
-        })
-        .on('end', function () {
-          //console.dir(items) // => [ ... array of files without directories]
-          resolve(items)
-        })
-    })
-  },
+  // loadFilesFromFolder(folderPath) {
+  //   function ignoreTaggedFolder(item) {
+  //     return nodePath.basename(item) !== 'tagged'
+  //   }
+  //
+  //   const excludeDirAndOnlyMp3 = through2.obj(function (item, enc, next) {
+  //     if (!item.stats.isDirectory() && nodePath.extname(item.path) === '.mp3') this.push(item)
+  //     next()
+  //   })
+  //
+  //   const items = []
+  //   return new Promise((resolve, reject) => {
+  //     klaw(folderPath, {filter: ignoreTaggedFolder})
+  //       .pipe(excludeDirAndOnlyMp3)
+  //       .on('data', function (item) {
+  //         items.push(item.path)
+  //         // only items of none ignored folders will reach here
+  //       })
+  //       .on('error', function (err, item) {
+  //         console.log(err.message)
+  //         console.log(item.path) // the file the error occurred on
+  //         reject()
+  //       })
+  //       .on('end', function () {
+  //         //console.dir(items) // => [ ... array of files without directories]
+  //         resolve(items)
+  //       })
+  //   })
+  // },
 
   loadTags(file) {
-    const _this = this
     return new Promise((resolve) => {
       new jsmediatags.Reader(file)
         .setTagsToRead(["title", "artist", "album", "year", "genre", "picture", "lyrics"])
@@ -83,19 +79,19 @@ export default Controller.extend({
     })
   },
 
-  moveFile(path) {
-    return new Promise((resolve, reject) => {
-      let fileName = nodePath.basename(path)
-      let newFilePath = nodePath.dirname(path) + '\\tagged'
-      let newFile = newFilePath + '\\' + fileName
-      fs.ensureDir(newFilePath).then(fs.move(path, newFile)).then(() => {
-        resolve(path)
-      }).catch(error => {
-        console.error(error)
-        reject(error)
-      })
-    })
-  },
+  /*  moveFile(path) {
+   return new Promise((resolve, reject) => {
+   let fileName = nodePath.basename(path)
+   let newFilePath = nodePath.dirname(path) + '\\tagged'
+   let newFile = newFilePath + '\\' + fileName
+   fs.ensureDir(newFilePath).then(fs.move(path, newFile)).then(() => {
+   resolve(path)
+   }).catch(error => {
+   console.error(error)
+   reject(error)
+   })
+   })
+   },*/
 
   actions: {
     closeFinishDialog() {
@@ -115,16 +111,17 @@ export default Controller.extend({
       const paths = _this.get('paths')
 
       return Promise.all(paths.map(path => {
+        let targetDir = path + '\\tagged'
         return new Promise(resolve1 => {
-          return _this.loadFilesFromFolder(path).then(files => {
+          return loadFilesFromFolder(path, 'tagged', '.mp3').then(files => {
             return Promise.all(files.map(file => {
               return new Promise((resolve2, reject2) => {
                 _this.loadTags(file).then(fileAndTags => {
-                  if(fileAndTags) {
+                  if (fileAndTags) {
                     if (fileAndTags.tags.title && fileAndTags.tags.artist) {
                       let res = nodeID3.write(fileAndTags.tags, fileAndTags.path)
                       if (res) {
-                        _this.moveFile(fileAndTags.path).then(file => {
+                        moveFile(fileAndTags.path, targetDir).then(file => {
                           _this.incrementProperty('filesTaggedAndMoved')
                           _this.incrementProperty('loading.processedFiles')
                           resolve2(file)
@@ -137,19 +134,17 @@ export default Controller.extend({
                   }
                   resolve2()
                 })
-              })
+              }).catch(error => console.error(error))
             })).then(result => {
               resolve1(result)
             })
           })
-        })
-      }))
-        .then(result => {
-          console.log('finish', result)
-          _this.set('loading.isLoading', false)
-          _this.set('showFinishDialog', true)
-        })
-        .catch(error => console.log(error))
+        }).catch(error => console.error(error))
+      })).then(result => {
+        console.log('finish', result)
+        _this.set('loading.isLoading', false)
+        _this.set('showFinishDialog', true)
+      }).catch(error => console.error(error))
     }
   }
 })

@@ -88,11 +88,11 @@ export default Ember.Controller.extend({
     return str
   },
 
-  rename(file) {
+  rename(filePath) {
     const _this = this
     const jsmediatags = requireNode('jsmediatags')
     return new RSVP.Promise(function (resolve, reject) {
-      new jsmediatags.Reader(file.path)
+      new jsmediatags.Reader(filePath.path)
         .setTagsToRead(["title", "artist", "picture", "album", "comment", "lyrics"])
         .read({
           onSuccess: function (tag) {
@@ -100,7 +100,7 @@ export default Ember.Controller.extend({
             let title = tag.tags.title
             //let album = tag.tag.album
             if (artist && title) {
-              _this.moveFile(file.path, _this.clearString(artist) + ' - ' + _this.clearString(title) + '.mp3').then(function () {
+              _this.moveFile(filePath.path, _this.clearString(artist) + ' - ' + _this.clearString(title) + '.mp3').then(function () {
                 resolve()
               })
             }
@@ -109,7 +109,7 @@ export default Ember.Controller.extend({
             }
           },
           onError: function (error) {
-            console.log(error.type, ', ', error.info, ', file:', file)
+            console.error('error:', error.type, ', ', error.info, ', file:', filePath)
             reject(error)
           }
         })
