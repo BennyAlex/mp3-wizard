@@ -36,18 +36,13 @@ app.on('ready', () => {
 
   const {width, height} = electron.screen.getPrimaryDisplay().workAreaSize
   let wid = width * .7, hei = height * .7
-  if (wid < 700 || hei < 400) {
-    wid = width
-    hei = height
-  }
+  const isSmall = (wid < 900 || hei < 700)
 
-  let options = {width: wid, height: hei, show: false, backgroundColor: '#666666'}
+  let options = {width: wid, height: hei, show: false, backgroundColor: '#666666', frame: isDev()}
+  mainWindow = new BrowserWindow(options);
 
   if (isDev()) {
-    options['frame'] = true
-    mainWindow = new BrowserWindow(options);
     console.log('Running in Development');
-
     const menu = new Menu();
     menu.append(new MenuItem({
       label: 'Reload',
@@ -64,20 +59,16 @@ app.on('ready', () => {
       role: 'togglefullscreen',
       accelerator: 'F11',
     }));
-
     Menu.setApplicationMenu(menu)
   }
-
   else {
-    options['frame'] = false
-    mainWindow = new BrowserWindow(options);
     mainWindow.setMenu(null);
   }
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
+    if (isSmall) mainWindow.maximize()
   })
-  //mainWindow.maximize();
 
   // If you want to open up dev tools programmatically, call
   // mainWindow.openDevTools();

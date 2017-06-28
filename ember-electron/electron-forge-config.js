@@ -1,19 +1,12 @@
 module.exports = {
   "make_targets": {
     "win32": [
-      "squirrel"
-    ],
-    "darwin": [
       "zip"
-    ],
-    "linux": [
-      "deb",
-      "rpm"
     ]
   },
   "electronPackagerConfig": {},
   "electronWinstallerConfig": {
-    "name": ""
+    "name": "MP3-Wizard"
   },
   "electronInstallerDebian": {},
   "electronInstallerRedhat": {},
