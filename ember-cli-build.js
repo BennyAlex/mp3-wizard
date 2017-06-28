@@ -8,14 +8,18 @@ module.exports = function (defaults) {
     },
     /* etc */
     babel: {
+      plugins: ["transform-class-properties", "syntax-class-properties"],
       includePolyfill: true,
       blacklist: [
+        "es6.blockScoping/constants",
+        'es6.arrowFunctions',
         'es6.forOf',
         'regenerator',
         'es6.arrowFunctions',
         'es6.constants',
         'es6.blockScoping',
-        'es6.templateLiterals']
+        'es6.templateLiterals'],
+      optional: {"es7.classProperties": 0}
     },
     sourcemaps: {
       enabled: true,

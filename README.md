@@ -1,9 +1,13 @@
 # electron-mp3-wizard
+An application to tag or rename mp3's automatically, build with Electron, Javascript and Ember
 
-This README outlines the details of collaborating on this Ember application.
-A short introduction of this app could easily go here.
+#Plans
+* add optional fetching tags from Discogs
+* tag and rename files in one procedure
+* replace ember with a lighter framework, maybe vue.js
+* MP3-Wizard app build with NativeScript
 
-## Prerequisites
+### Prerequisites
 
 You will need the following things properly installed on your computer.
 
@@ -12,7 +16,7 @@ You will need the following things properly installed on your computer.
 * [Ember CLI](https://ember-cli.com/)
 * [PhantomJS](http://phantomjs.org/)
 
-## Installation
+### Installation
 
 * `git clone <repository-url>` this repository
 * `cd electron-mp3-wizard`
@@ -23,23 +27,22 @@ You will need the following things properly installed on your computer.
 * `ember serve`
 * Visit your app at [http://localhost:4200](http://localhost:4200).
 
-### Code Generators
+#### Code Generators
 
 Make use of the many generators for code, try `ember help generate` for more details
 
-### Running Tests
+#### Running Tests
 
 * `ember test`
 * `ember test --server`
 
 ### Building
 
-* `ember build` (development)
-* `ember build --environment production` (production)
+* `ember electron:package` or `ember electron:make`
 
-### Deploying
+### Credits
+Thanks @trustedtomato for guess-metadata and aadsm for jsmediatags
 
-Specify what it takes to deploy your app.
 
 ## Further Reading / Useful Links
 
