@@ -1,9 +1,9 @@
 import Ember from "ember";
-import {initTagger, tagger} from "../libs/tagger";
+import Tagger from "../libs/tagger";
+import Storage from "../libs/storage"
 import {loadFilesFromFolder, moveFile} from "../libs/file-utils";
 const {Controller, inject} = Ember;
 const jsmediatags = requireNode("jsmediatags")
-const nodePath = requireNode('path')
 const nodeID3 = requireNode('node-id3')
 const {dialog} = requireNode('electron').remote
 
@@ -13,38 +13,8 @@ export default Controller.extend({
   loading: inject.service(),
 
   init() {
-    initTagger()
+    Tagger.wordsToRemove = Storage.wordsToRemove
   },
-
-  // loadFilesFromFolder(folderPath) {
-  //   function ignoreTaggedFolder(item) {
-  //     return nodePath.basename(item) !== 'tagged'
-  //   }
-  //
-  //   const excludeDirAndOnlyMp3 = through2.obj(function (item, enc, next) {
-  //     if (!item.stats.isDirectory() && nodePath.extname(item.path) === '.mp3') this.push(item)
-  //     next()
-  //   })
-  //
-  //   const items = []
-  //   return new Promise((resolve, reject) => {
-  //     klaw(folderPath, {filter: ignoreTaggedFolder})
-  //       .pipe(excludeDirAndOnlyMp3)
-  //       .on('data', function (item) {
-  //         items.push(item.path)
-  //         // only items of none ignored folders will reach here
-  //       })
-  //       .on('error', function (err, item) {
-  //         console.log(err.message)
-  //         console.log(item.path) // the file the error occurred on
-  //         reject()
-  //       })
-  //       .on('end', function () {
-  //         //console.dir(items) // => [ ... array of files without directories]
-  //         resolve(items)
-  //       })
-  //   })
-  // },
 
   loadTags(file) {
     return new Promise((resolve) => {
@@ -60,11 +30,11 @@ export default Controller.extend({
               nodeID3.removeTags(file)
               //check if old tags had title and artist
               if (tag.tags.title && tag.tags.artist) resolve({path: file, tags: tag.tags})
-              else resolve(tagger(file))
+              else resolve(Tagger.tag(file))
             }
             else if (!(tag.tags.title && tag.tags.artist)) {
               // file doesnt have an artist or a title -> lets tag it
-              resolve(tagger(file))
+              resolve(Tagger.tag(file))
             }
             else {
               //file already tagged
@@ -73,25 +43,11 @@ export default Controller.extend({
           },
           onError: function () {
             // for the file exists no suitable tag reader, so the file dosnt have tags -> lets tag it
-            resolve(tagger(file))
+            resolve(Tagger.tag(file))
           }
         })
     })
   },
-
-  /*  moveFile(path) {
-   return new Promise((resolve, reject) => {
-   let fileName = nodePath.basename(path)
-   let newFilePath = nodePath.dirname(path) + '\\tagged'
-   let newFile = newFilePath + '\\' + fileName
-   fs.ensureDir(newFilePath).then(fs.move(path, newFile)).then(() => {
-   resolve(path)
-   }).catch(error => {
-   console.error(error)
-   reject(error)
-   })
-   })
-   },*/
 
   actions: {
     closeFinishDialog() {

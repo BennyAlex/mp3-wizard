@@ -1,6 +1,7 @@
 import Ember from "ember"
 const {Controller, inject} = Ember
 const app = requireNode('electron').remote.app
+import Storage from "../libs/storage"
 
 export default Controller.extend({
   title: inject.service(),
