@@ -1,4 +1,4 @@
-const jsonStorage = requireNode('electron-json-storage')
+const settings = requireNode('electron-settings')
 
 const defaultWordsToRemove = [
   'free_mp3_download',
@@ -27,31 +27,29 @@ export default class Storage {
   static _initDone = false
 
   static get wordsToRemove() {
-    if(this._initDone) return this._wordsToRemove
+    if (this._initDone) return this._wordsToRemove
     else return this._initStorage()
   }
+
   static set wordsToRemove(value) {
     this._wordsToRemove = value
     return value
   }
 
-  static _initStorage() {
-    jsonStorage.has('wordsToRemove', (error, hasKey) => {
-      if (error) throw error;
+  static setAndSaveWordsToRemove(value) {
+    this._wordsToRemove = value
+    settings.set('wordsToRemove', value)
+    return value
+  }
 
-      if (!hasKey) {
-        jsonStorage.set('wordsToRemove', defaultWordsToRemove, error => {
-          if (error) throw error
-        })
-        this.wordsToRemove = defaultWordsToRemove
-      }
-      else if (hasKey) {
-        jsonStorage.get('wordsToRemove', (error, data) => {
-          if (error) throw error
-          this.wordsToRemove = data
-        })
-      }
-    })
+  static _initStorage() {
+    if (settings.has('wordsToRemove')) {
+      this.wordsToRemove = settings.get('wordsToRemove')
+    }
+    else {
+      settings.set('wordsToRemove', defaultWordsToRemove)
+      this.wordsToRemove = defaultWordsToRemove
+    }
     this._initDone = true
     return this.wordsToRemove
   }

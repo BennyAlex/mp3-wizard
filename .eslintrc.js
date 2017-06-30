@@ -33,7 +33,7 @@ module.exports = {
     "new-cap": 1,
     "no-caller": 1,
     "no-new": 1,
-    "no-plusplus": 1,
+    "no-plusplus": 0,
     "no-debugger": 1,
     "no-unused-vars": 1,
     "no-undef": 1,
